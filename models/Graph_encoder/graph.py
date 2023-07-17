@@ -290,9 +290,9 @@ class GraphEncoder(nn.Module):
             path_dict = {}
             num_class = 0
             for s in label_hier:
-                print(s, "s")
+                # print(s, "s")
                 for v in label_hier[s]:
-                    print(v, "v")
+                    # print(v, "v")
                     path_dict[v] = s
                     if num_class < v:
                         num_class = v
@@ -392,8 +392,8 @@ class GraphEncoder(nn.Module):
             if GRAPH == 'GRAPHORMER':
                 label_emb += self.id_embedding(self.label_id[:, None].expand(-1, expand_size)).view(1, -1,
                                                                                                     self.config.hidden_size)
-        print(label_emb.shape, "label_emb GE")
-        print(len(self.hir_layers),"self.hir_layers")
+        # print(label_emb.shape, "label_emb GE")
+        # print(len(self.hir_layers),"self.hir_layers")
         # for hir_layer in self.hir_layers:
         #     label_emb = hir_layer(label_emb, extra_attn, self_attn_mask, inputs_embeds, cross_attn_mask)
         # print(label_emb.shape,"label_emb")
