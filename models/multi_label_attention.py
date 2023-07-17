@@ -56,9 +56,9 @@ class HiAGMLA(nn.Module):
         """
         label_embedding = self.label_embedding(torch.arange(0, len(self.label_map)).long().to(self.device))
         label_embedding = label_embedding.unsqueeze(0)
-        print(label_embedding.shape,"label_embedding")
+        # print(label_embedding.shape,"label_embedding")
         tree_label_feature = self.graph_model(label_embedding)
-        print(tree_label_feature.shape,"tree_label_feature,graph_output")
+        # print(tree_label_feature.shape,"tree_label_feature,graph_output")
         label_feature = tree_label_feature.squeeze(0)
         self.label_feature = label_feature
 
@@ -102,19 +102,19 @@ class HiAGMLA(nn.Module):
             label_feature = self.label_feature
         else:
             label_embedding = self.label_embedding(torch.arange(0, len(self.label_map)).long().to(self.device))
-            print(label_embedding.shape,"label_embedding")
+            # print(label_embedding.shape,"label_embedding")
             label_embedding = label_embedding.unsqueeze(0).to(self.device)
-            print(label_embedding.shape,"label_embedding after unaqueeze")
+            # print(label_embedding.shape,"label_embedding after unaqueeze")
             tree_label_feature = self.graph_model(label_embedding)
-            print(tree_label_feature.shape,"tree_label_feature_graph output")
+            # print(tree_label_feature.shape,"tree_label_feature_graph output")
             label_feature = tree_label_feature.squeeze(0).to(self.device)
-            print(label_feature.shape,"label_feature")
+            # print(label_feature.shape,"label_feature")
 
         label_aware_text_feature = self._soft_attention(text_feature, label_feature).to(self.device)
-        print(label_aware_text_feature.shape,"label_aware_text_feature")
+        # print(label_aware_text_feature.shape,"label_aware_text_feature")
         label_aware_text_feature = self.linear(label_aware_text_feature.view(label_aware_text_feature.shape[0], -1)).to(
             self.device)
-        print(label_aware_text_feature.shape,"label_aware_text_feature after linear")
+        # print(label_aware_text_feature.shape,"label_aware_text_feature after linear")
         logits = self.dropout(label_aware_text_feature).to(self.device)
-        print(logits.shape,"logits")
+        # print(logits.shape,"logits")
         return logits
