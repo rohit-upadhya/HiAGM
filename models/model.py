@@ -102,6 +102,6 @@ class HiAGM(nn.Module):
 
         token_output_new = embedding[:, 0, :].to(self.device)
 
-        logits = self.hiagm(token_output_new).to(self.device)
+        logits = self.hiagm(token_output_new)
 
         return logits

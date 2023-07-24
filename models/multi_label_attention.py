@@ -106,15 +106,16 @@ class HiAGMLA(nn.Module):
             label_embedding = label_embedding.unsqueeze(0).to(self.device)
             # print(label_embedding.shape,"label_embedding after unaqueeze")
             tree_label_feature = self.graph_model(label_embedding)
-            # print(tree_label_feature.shape,"tree_label_feature_graph output")
+            # pxrint(tree_label_feature.shape,"tree_label_feature_graph output")
             label_feature = tree_label_feature.squeeze(0).to(self.device)
             # print(label_feature.shape,"label_feature")
 
         label_aware_text_feature = self._soft_attention(text_feature, label_feature).to(self.device)
+        label_information = label_aware_text_feature
         # print(label_aware_text_feature.shape,"label_aware_text_feature")
         label_aware_text_feature = self.linear(label_aware_text_feature.view(label_aware_text_feature.shape[0], -1)).to(
             self.device)
         # print(label_aware_text_feature.shape,"label_aware_text_feature after linear")
         logits = self.dropout(label_aware_text_feature).to(self.device)
         # print(logits.shape,"logits")
-        return logits
+        return logits, label_information

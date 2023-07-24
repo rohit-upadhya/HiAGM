@@ -10,10 +10,10 @@ import os
 from data_modules.data_loader import data_loaders
 from data_modules.vocab import Vocab
 from train_modules.criterions import ClassificationLoss
-from train_modules. trainer import Trainer
+from train_modules.trainer import Trainer
 from helper.utils import load_checkpoint, save_checkpoint
 import time
-
+os.environ['CUDA_LAUNCH_BLOCKING'] = "0"
 
 def set_optimizer(config, model):
     """
@@ -29,7 +29,7 @@ def set_optimizer(config, model):
         raise TypeError("Recommend the Adam optimizer")
 
 
-def train(config):
+def train(config, device):
     """
     :param config: helper.configure, Configure Object
     """
@@ -40,7 +40,7 @@ def train(config):
 
     # get data
     train_loader, dev_loader, test_loader = data_loaders(config, corpus_vocab)
-
+    
     # build up model
     hiagm = HiAGM(config, corpus_vocab, model_type=config.model.type, model_mode='TRAIN')
     hiagm.to(config.train.device_setting.device)
@@ -52,11 +52,17 @@ def train(config):
     optimize = set_optimizer(config, hiagm)
 
     # get epoch trainer
+    prototype_dim = config.embedding.token.dimension
+    num_labels = len(corpus_vocab.v2i['label'])
+    global_prototype_tensor = torch.randn((num_labels+1, prototype_dim), requires_grad=True, device=device).to(device)
+    # print(global_prototype_tensor.shape,"global_prototype_tensor")
     trainer = Trainer(model=hiagm,
                       criterion=criterion,
                       optimizer=optimize,
                       vocab=corpus_vocab,
                       config=config)
+                      # ,
+                      # global_prototype_tensor=global_prototype_tensor)
 
     # set origin log
     best_epoch = [-1, -1]
@@ -69,11 +75,11 @@ def train(config):
     # train
     for epoch in range(config.train.start_epoch, config.train.end_epoch):
         start_time = time.time()
-        trainer.train(train_loader,
-                      epoch)
+        _, global_prototype_tensor = trainer.train(train_loader,
+                      epoch,global_prototype_tensor)
         trainer.eval(train_loader, epoch, 'TRAIN')
         print(trainer,"train_loader")
-        performance = trainer.eval(dev_loader, epoch, 'DEV')
+        performance, _ = trainer.eval(dev_loader, epoch, 'DEV')
         # saving best model and check model
         if not (performance['micro_f1'] >= best_performance[0] or performance['macro_f1'] >= best_performance[1]):
             wait += 1
@@ -150,5 +156,5 @@ if __name__ == "__main__":
     logger.Logger(configs)
 
 
-
-    train(configs)
+    device = configs.train.device_setting.device
+    train(configs, device)
