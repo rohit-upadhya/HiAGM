@@ -13,6 +13,7 @@ from train_modules.criterions import ClassificationLoss
 from train_modules.trainer import Trainer
 from helper.utils import load_checkpoint, save_checkpoint
 import time
+from models.proto.cost_matrix import calc_acm
 os.environ['CUDA_LAUNCH_BLOCKING'] = "0"
 
 def set_optimizer(config, model):
@@ -53,14 +54,20 @@ def train(config, device):
 
     # get epoch trainer
     prototype_dim = config.embedding.token.dimension
+    print(corpus_vocab.v2i['label'],"corpus_vocab.v2i['label']")
     num_labels = len(corpus_vocab.v2i['label'])
+    # print(corpus_vocab.v2i['label'],"corpus_vocab.v2i['label']")
+    # 
     global_prototype_tensor = torch.randn((num_labels+1, prototype_dim), requires_grad=True, device=device).to(device)
     # print(global_prototype_tensor.shape,"global_prototype_tensor")
+    ac_matrix = calc_acm(config, corpus_vocab.i2v['label'])
     trainer = Trainer(model=hiagm,
                       criterion=criterion,
                       optimizer=optimize,
                       vocab=corpus_vocab,
-                      config=config)
+                      config=config,
+                      global_prototype_tensor=global_prototype_tensor,
+                      ac_matrix=ac_matrix)
                       # ,
                       # global_prototype_tensor=global_prototype_tensor)
 
@@ -75,11 +82,11 @@ def train(config, device):
     # train
     for epoch in range(config.train.start_epoch, config.train.end_epoch):
         start_time = time.time()
-        _, global_prototype_tensor = trainer.train(train_loader,
-                      epoch,global_prototype_tensor)
+        trainer.train(train_loader,
+                      epoch)
         trainer.eval(train_loader, epoch, 'TRAIN')
         print(trainer,"train_loader")
-        performance, _ = trainer.eval(dev_loader, epoch, 'DEV')
+        performance = trainer.eval(dev_loader, epoch, 'DEV')
         # saving best model and check model
         if not (performance['micro_f1'] >= best_performance[0] or performance['macro_f1'] >= best_performance[1]):
             wait += 1
@@ -124,6 +131,7 @@ def train(config, device):
                 'best_performance': best_performance,
                 'optimizer': optimize.state_dict()
             }, os.path.join(model_checkpoint, model_name + '_epoch_' + str(epoch)))
+            torch.save(trainer.global_prototype_tensor, os.path.join(model_checkpoint, 'global_prototypes_epoch_{}.pt'.format(epoch)))
 
         logger.info('Epoch {} Time Cost {} secs.'.format(epoch, time.time() - start_time))
 
@@ -140,6 +148,7 @@ def train(config, device):
                         config=config,
                         optimizer=optimize)
         trainer.eval(test_loader, best_epoch[1], 'TEST')
+    torch.save(trainer.global_prototype_tensor, os.path.join(model_checkpoint, 'global_prototypes_final.pt'))
 
     return
 
