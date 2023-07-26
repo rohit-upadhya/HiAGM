@@ -43,6 +43,7 @@ def calc_graph(config):
             graph.add_edge(parent, child)
 
     
+    
     # adjacency_matrix = nx.adjacency_matrix(graph)
 
     
